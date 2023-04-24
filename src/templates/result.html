@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<div class="container">
+
+
+
+
+
+  <div class="container">
+    <span id="pdf-izvestaj">
+      <div class="row ">
+        <div class="col-6">
+
+          <p class="mt-3">Predviđanje: <b>{{result.get("class")}}</b></p>
+
+
+        </div>
+        <div class="col-6 d-flex justify-content-end">
+          <button class="btn btn-primary mt-3" id="pdf">PDF IZVEŠTAJ</button>
+        </div>
+      </div>
+      <div class="row text-center">
+        <div class="col-md-6">
+          <figure class="figure">
+            <img src="data:image/png/image/jpeg;base64, {{result.get("image")}}"
+              class="figure-img img-thumbnail input-image">
+          </figure>
+        </div>
+        <div class="col-md-6">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th scope="col">Vrsta lezije</th>
+                <th scope="col">Pouzdanost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {%for i in range(0, 7)%}
+              <tr>
+                <th scope="row">{{result.get("probs")[i][0]}}</th>
+                <td>{{result.get("probs")[i][1]}}</td>
+
+              </tr>
+              {%endfor%}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="row mt-5 mb-5">
+          <div class="alert alert-warning" role="alert">
+            <h3 class="mt-1 pt-2 text-center">Opis bolesti</h3>
+      
+      
+          <p id="bolest"></p>
+          </div>
+         
+         
+        
+      
+         
+        </div>
+        <h3 class="mt-5 pt-4 text-center">Grafički prikaz</h3>
+        <div class="row">
+
+          <canvas id="chart" style="width:100%; height:500px;"></canvas>
+        </div>
+    </span>
+    <div class="row mt-5 pt-5">
+
+      <div style="display: flex; justify-content: center; align-items: center;">
+        <div id="chartdiv" style="width:100%; height:450px;">
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+</div>
+
+<script>
+
+  //funkcija za prikaz bolesti
+
+  var bolest = `{{result.get("class")}}`;
+  if (bolest === 'Benigni') {
+    document.getElementById("bolest").innerHTML = `Benigni -
+      benigna lezija je uobičajena benigna (nekancerozna) izraslina na koži. Ima tendenciju da se pojavi u
+      srednjim godinama i možete dobiti više kako starite. Benigne lezije nisu pre-kancerogene, ali mogu ličiti
+      na druge kožne izrasline koje su kancergene.`;
+  } else if (bolest === 'Dermatofibroma') {
+    document.getElementById("bolest").innerHTML = `Dermatofibroma - ćelijska dermatofibroma je nekancergovan rast kože. Može izgledati kao mala, čvrsta
+      bubuljica, slična mladežu. Za razliku od drugih dermatofibroma, ćelijski dermatofibroma se često vezuju za vaš
+      najdublji sloj kože. Pošto nisu kancerozni, obično im nije potreban tretman.`;
+  }
+  else if (bolest === 'Melanocytic nevi') {
+    document.getElementById("bolest").innerHTML = `Melanocytic nevi -
+      pacijenti sa višestrukim melanocytic nevi-som imaju povećan rizik od melanoma. Melanocytic nevi, ako se
+      pravilno dijagnostikuju, biološki je stabilan, potpuno benigne lezije.`;
+
+  }
+  else if (bolest === 'Karcinom bazalnih ćelija') {
+    document.getElementById("bolest").innerHTML = `Karcinom bazalnih ćelija -
+      je vrsta raka kože koja se najčešće razvija na delovima kože izloženim suncu, kao što
+      je lice. Na smeđoj i crnoj koži, karcinom bazalnih ćelija često izgleda kao kvrga koja je smeđa ili sjajno
+      crna i ima uvijenu ivicu. Karcinom bazalnih ćelija je vrsta raka kože.`;
+
+  }
+  else if (bolest === 'Vaskularna lezija') {
+    document.getElementById("bolest").innerHTML = `Vaskularna lezija - je relativno česte abnormalnosti kože i potkožnih tkiva, poznatije
+      kao madeži.
+      Postoje tri
+      glavne kategorije vaskularnih lezija: hemangiomi, vaskularne malformacije i piogeni granulomi.`;
+
+  }
+  else if (bolest === 'Malanom') {
+    document.getElementById("bolest").innerHTML = `Melanom - je rak koji se vidi golim okom i najopasniji oblik raka karcinoma mladeža, melanomu ili nekoj drugoj vrsti tumora kože.`;
+
+  }
+  else if (bolest === 'Actinic keratoses') {
+    document.getElementById("bolest").innerHTML = `Actinic keratoses -
+      su suvi ljuskavi delovi kože koji su oštećeni suncem.
+      Ovi mladeži obično nisu ozbiljni. Ali postoji mala šansa da oni postanu rak kože, pa je važno da izbegnete
+      dalje
+      oštećenje kože.`;
+
+  }
+
+
+
+  const button = document.getElementById('pdf');
+
+  function generatePDF() {
+    // Choose the element that your content will be rendered to.
+    const element = document.getElementById('pdf-izvestaj');
+    // Choose the element and save the PDF for your user.
+    html2pdf().from(element).save();
+  }
+
+  button.addEventListener('click', generatePDF);
+</script>
+
+<script>
+  var barData = {
+    labels: [
+      {%for i in range(0, 7) %}
+  "{{ result.get("probs")[i][0] }}",
+    {% endfor %}
+],
+
+  datasets: [{
+    fillColor: "rgba(151,187,205,0.2)",
+    strokeColor: "rgba(151,187,205,1)",
+    pointColor: "rgba(151,187,205,1)",
+    pointStrokeColor: "#fff",
+    pointHighlightFill: "#fff",
+    pointHighlightStroke: "rgba(151,187,205,1)",
+    bezierCurve: false,
+    data: [
+      {%for i in range(0, 7) %}
+       {{(result.get("probs")[i][1]).replace('%', '')}},
+  {% endfor %}]
+  }
+]
+}
+
+  Chart.defaults.global.animationSteps = 50;
+  Chart.defaults.global.tooltipYPadding = 16;
+  Chart.defaults.global.tooltipCornerRadius = 0;
+  Chart.defaults.global.tooltipTitleFontStyle = "normal";
+  Chart.defaults.global.tooltipFillColor = "rgba(0,0,0,0.8)";
+  Chart.defaults.global.animationEasing = "easeOutBounce";
+  Chart.defaults.global.responsive = false;
+  Chart.defaults.global.scaleLineColor = "black";
+  Chart.defaults.global.scaleFontSize = 16;
+
+  // get bar chart canvas
+  var mychart = document.getElementById("chart").getContext("2d");
+
+  steps = 10
+  max = 40
+  // draw bar chart
+  var LineChartDemo = new Chart(mychart).Line(barData, {
+    scaleOverride: true,
+    scaleSteps: steps,
+    scaleStepWidth: Math.ceil(max / steps),
+    scaleStartValue: 0,
+    scaleShowVerticalLines: true,
+    scaleShowGridLines: true,
+    barShowStroke: true,
+    scaleShowLabels: true,
+    bezierCurve: false,
+  });
+
+
+</script>
+
+<script>
+
+  am4core.ready(function () {
+
+    // Themes begin
+    am4core.useTheme(am4themes_animated);
+    // Themes end
+
+    var chart = am4core.create("chartdiv", am4charts.PieChart3D);
+    chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
+
+    chart.legend = new am4charts.Legend();
+
+    chart.data = [
+
+      {%for i in range(0, 7) %}
+        { litres: {{(result.get("probs")[i][1]).replace('%', '')}},
+
+    country: "{{ result.get("probs")[i][0] }}"},
+
+    {% endfor %}
+       
+       
+     
+      
+        ];
+
+  var series = chart.series.push(new am4charts.PieSeries3D());
+  series.dataFields.value = "litres";
+  series.dataFields.category = "country";
+
+      }); // end am4core.ready()
+</script>
+
+
+
+
+
+</div>
+
+
+<!-- <figure class="figure">
+  <img src="data:image/png;base64, {{result.get(" image")}}" class="figure-img img-thumbnail input-image img-fluid">
+</figure> -->
+
+
+
+{% endblock %}
